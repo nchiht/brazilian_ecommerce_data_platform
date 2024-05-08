@@ -1,0 +1,13 @@
+#virtual env
+venv
+
+#data
+data
+init_mysql
+
+#dagster
+dagster_home/.logs_queue
+dagster_home/.nux
+dagster_home/.telemetry
+dagster_home/logs
+
