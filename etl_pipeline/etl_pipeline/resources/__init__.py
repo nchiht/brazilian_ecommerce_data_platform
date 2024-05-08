@@ -3,7 +3,7 @@ from .minio_io_manager import MinIOIOManager
 from .psql_io_manager import PostgreSQLIOManager
 
 MYSQL_CONFIG = {
-    "host": "localhost",
+    "host": "de_mysql",
     "port": 3306,
     "database": "brazillian_ecommerce",
     "user": "admin",
@@ -11,13 +11,13 @@ MYSQL_CONFIG = {
 }
 
 MINIO_CONFIG = {
-    "endpoint_url": "localhost:9000",
+    "endpoint_url": "minio:9000",
     "bucket": "warehouse",
     "aws_access_key_id": "minio",
     "aws_secret_access_key": "minio123",
 }
 PSQL_CONFIG = {
-    "host": "localhost",
+    "host": "de_psql",
     "port": 5432,
     "database": "postgres",
     "user": "admin",

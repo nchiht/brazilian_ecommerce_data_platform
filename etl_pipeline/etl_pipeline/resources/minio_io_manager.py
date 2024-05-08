@@ -43,6 +43,7 @@ class MinIOIOManager(IOManager):
         key_name, tmp_file_path = self._get_path(context)
         obj.to_parquet(tmp_file_path, engine='pyarrow')
 
+        context.log.info("Establishing minio connection")
         try:
             # connect to MinIO
             with connect_minio(self._config) as client:
