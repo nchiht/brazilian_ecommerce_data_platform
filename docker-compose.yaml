@@ -10,11 +10,8 @@ services:
     container_name: etl_pipeline
     image: etl_pipeline:latest
     restart: always
-#    ports:
-#      - "8888:8888"
     volumes:
       - ./etl_pipeline:/opt/dagster/app
-      - ./etl_pipeline/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
     env_file:
       - env
     networks:
@@ -124,52 +121,6 @@ services:
       - de_psql
     env_file:
       - env
-    networks:
-      - de_network
-
-  # Spark
-  spark-master:
-    build:
-      context: ./spark
-      dockerfile: ./Dockerfile
-    container_name: spark_master
-    hostname: spark_master
-    env_file:
-      - spark_master_env
-    ports:
-      - "7077:7077"
-      - "8080:8080"
-    volumes:
-      - ./spark/spark-defaults.conf:/opt/bitnami/spark/conf/spark-defaults.conf
-    networks:
-      - de_network
-
-  spark-worker:
-    image: docker.io/bitnami/spark:3.3
-    deploy:
-      replicas: 2
-    env_file:
-      - spark_worker_env
-
-    networks:
-      - de_network
-
-  spark-notebook:
-    build:
-      context: ./notebooks
-      dockerfile: ./Dockerfile
-    container_name: spark_notebook
-    hostname: spark_notebook
-    user: root
-    environment:
-      - JUPYTER_ENABLE_LAB="yes"
-      - GRANT_SUDO="yes"
-    volumes:
-      - ./notebooks:/home/jovyan/work
-      - ./notebooks/spark-defaults.conf:/usr/local/spark/conf/spark-defaults.conf
-    ports:
-      - "8888:8888"
-      - "4040:4040"
     networks:
       - de_network
 

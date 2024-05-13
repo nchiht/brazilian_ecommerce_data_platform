@@ -83,3 +83,12 @@ class MinIOIOManager(IOManager):
                 return content
         except Exception:
             raise
+
+    # def integrate_data(self, sql: str, context, ) -> None:
+    #     key_name, tmp_file_path = self._get_path(context)
+    #     try:
+    #         df =
+    #         with connect_minio(self._config) as client:
+    #             context.log.info("hello")
+    #     except Exception as e:
+    #         raise e
