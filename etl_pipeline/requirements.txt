@@ -10,3 +10,5 @@ psycopg2-binary
 cryptography
 pandasql
 minio
+dagster-spark
+pyspark==3.4.3

@@ -1,18 +1,7 @@
-FROM python:3.10-slim
+FROM jupyter/all-spark-notebook:python-3.10
 
 USER root
 
-# Get jdk
-RUN apt-get update --yes && \
-    apt-get install --yes --no-install-recommends \
-    "openjdk-17-jre-headless" \
-    ca-certificates-java && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install prerequisites
-RUN apt-get update && apt-get install -y curl
-
-# Get Spark's necessary jars
 RUN curl -O https://dlcdn.apache.org/spark/spark-3.4.3/spark-3.4.3-bin-hadoop3.tgz \
     && tar zxvf spark-3.4.3-bin-hadoop3.tgz \
     && rm -rf spark-3.4.3-bin-hadoop3.tgz \
@@ -33,12 +22,3 @@ RUN curl -O https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.18.41/s3-
     && mv delta-core_2.12-2.2.0.jar /usr/local/spark/jars \
     && mv delta-storage-2.2.0.jar /usr/local/spark/jars \
     && mv hadoop-aws-3.3.2.jar /usr/local/spark/jars
-
-# Add repository code
-WORKDIR /opt/dagster/app
-COPY requirements.txt /opt/dagster/app
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-EXPOSE 4000
-CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "etl_pipeline"]
-#CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-m", "etl_pipeline"]
