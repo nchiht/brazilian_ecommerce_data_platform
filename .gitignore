@@ -11,3 +11,9 @@ dagster_home/.nux
 dagster_home/.telemetry
 dagster_home/logs
 
+#env
+env
+spark_master_env
+spark_worker_env
+
+# etl_pipeline

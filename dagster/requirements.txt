@@ -2,11 +2,5 @@ dagster
 dagit
 dagster-postgres
 dagster-docker
-pandas
-sqlalchemy
-pymysql
-pyarrow
-psycopg2-binary
-cryptography
-pandasql
-minio
+dagster-spark
+
