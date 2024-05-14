@@ -11,4 +11,5 @@ cryptography
 pandasql
 minio
 dagster-spark
+jupyter
 pyspark==3.4.3
