@@ -17,7 +17,7 @@ from sqlalchemy import create_engine
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="MinIO",
+    compute_kind="spark",
     group_name="silver_layer"
 )
 def fact_sales(
@@ -69,7 +69,7 @@ def fact_sales(
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="MinIO",
+    compute_kind="spark",
     group_name="silver_layer"
 )
 def dim_products(

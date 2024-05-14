@@ -6,7 +6,7 @@ from dagster import asset, Output, Definitions, DailyPartitionsDefinition
     io_manager_key="minio_io_manager",
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
-    compute_kind="MySQL",
+    compute_kind="python",
     group_name="bronze_layer"
 )
 def bronze_olist_orders_dataset(context) -> Output[pd.DataFrame]:
@@ -26,7 +26,7 @@ def bronze_olist_orders_dataset(context) -> Output[pd.DataFrame]:
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     group_name="bronze_layer",
-    compute_kind="MySQL"
+    compute_kind="python"
 )
 def bronze_olist_products_dataset(context) -> Output[pd.DataFrame]:
     sql_stm = "SELECT * FROM olist_products_dataset"
@@ -45,7 +45,7 @@ def bronze_olist_products_dataset(context) -> Output[pd.DataFrame]:
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     group_name="bronze_layer",
-    compute_kind="MySQL"
+    compute_kind="python"
 )
 def bronze_olist_order_items_dataset(context) -> Output[pd.DataFrame]:
     sql_stm = "SELECT * FROM olist_order_items_dataset"
@@ -64,7 +64,7 @@ def bronze_olist_order_items_dataset(context) -> Output[pd.DataFrame]:
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     group_name="bronze_layer",
-    compute_kind="MySQL"
+    compute_kind="python"
 )
 def bronze_olist_order_payments_dataset(context) -> Output[pd.DataFrame]:
     sql_stm = "SELECT * FROM olist_order_payments_dataset"
@@ -83,7 +83,7 @@ def bronze_olist_order_payments_dataset(context) -> Output[pd.DataFrame]:
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     group_name="bronze_layer",
-    compute_kind="MySQL"
+    compute_kind="python"
 )
 def bronze_product_category_name_translation(context) -> Output[pd.DataFrame]:
     sql_stm = "SELECT * FROM product_category_name_translation"

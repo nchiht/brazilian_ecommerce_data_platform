@@ -77,7 +77,7 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
     io_manager_key='psql_io_manager',
     required_resource_keys={"psql_io_manager"},
     key_prefix=["public"],
-    compute_kind="PostgreSQL",
+    compute_kind="postgres",
     group_name="warehouse_layer"
 )
 def sales_values_by_category(context, gold_sales_values_by_category: pd.DataFrame) -> Output[pd.DataFrame]:

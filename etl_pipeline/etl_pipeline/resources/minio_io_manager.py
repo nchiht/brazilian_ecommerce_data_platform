@@ -43,7 +43,6 @@ class MinIOIOManager(IOManager):
         key_name, tmp_file_path = self._get_path(context)
         obj.to_parquet(tmp_file_path, engine='pyarrow')
 
-        context.log.info("Establishing minio connection")
         try:
             # connect to MinIO
             with connect_minio(self._config) as client:
@@ -61,6 +60,15 @@ class MinIOIOManager(IOManager):
                 # upload to MinIO
                 client.fput_object(bucket_name, key_name, tmp_file_path)
                 print("successfully uploaded to bucket", bucket_name)
+
+                row_count = len(obj)
+                context.add_output_metadata(
+                    {
+                        "path": key_name,
+                        "records": row_count,
+                        "tmp": tmp_file_path
+                    }
+                )
 
                 # clean up tmp file
                 os.remove(tmp_file_path)
