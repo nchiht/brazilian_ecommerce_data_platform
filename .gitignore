@@ -18,3 +18,5 @@ spark_worker_env
 
 # etl_pipeline
 etl_pipeline/.Trash-0
+etl_pipeline/.ipynb_checkpoints
+etl_pipeline/etl_pipeline/resources/.ipynb_checkpoints
