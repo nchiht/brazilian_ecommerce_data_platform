@@ -77,6 +77,7 @@ class MinIOIOManager(IOManager):
 
     def load_input(self, context: InputContext) -> pd.DataFrame:
         key_name, tmp_file_path = self._get_path(context)
+        context.log.info(self._get_path(context))
         try:
             with connect_minio(self._config) as client:
                 bucket_name = self._config.get("bucket")
@@ -84,7 +85,7 @@ class MinIOIOManager(IOManager):
                 # get parquet file from minio
                 client.fget_object(bucket_name, key_name, tmp_file_path)
                 content = pd.read_parquet(tmp_file_path)
-                context.log.info(content)
+                # context.log.info(content)
 
                 # clean up tmp file
                 os.remove(tmp_file_path)
