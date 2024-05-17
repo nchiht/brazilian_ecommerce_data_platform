@@ -1,9 +1,7 @@
 import pandas as pd
 from dagster import asset, Output, AssetIn, AssetOut
-from sqlalchemy import create_engine
 from datetime import datetime
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, TimestampType
 
 
 @asset(
@@ -30,8 +28,13 @@ def fact_sales(
         bronze_olist_order_payments_dataset: pd.DataFrame
 ) -> Output[pd.DataFrame]:
 
-    query = """SELECT ro.order_id, ro.customer_id, ro.order_purchase_timestamp
+    query = """SELECT ro.order_id
+                    , ro.customer_id
+                    , ro.order_purchase_timestamp
                     , roi.product_id
+                    , roi.seller_id
+                    , rop.payment_type
+                    , rop.payment_installments
                     , rop.payment_value
                     , ro.order_status
                 FROM olist_orders_dataset ro    
@@ -58,17 +61,6 @@ def fact_sales(
     sparkDF = spark.sql(query)
     pd_data = sparkDF.toPandas()
 
-# Using sqlalchemy
-    # engine = create_engine('sqlite://', echo=False)
-    #
-    # # Convert the DataFrame to a SQL table
-    # bronze_olist_orders_dataset.to_sql('olist_orders_dataset', con=engine, index=False)
-    # bronze_olist_order_items_dataset.to_sql('olist_order_items_dataset', con=engine, index=False)
-    # bronze_olist_order_payments_dataset.to_sql('olist_order_payments_dataset', con=engine, index=False)
-    #
-    # # Execute the SQL query using Pandas
-    # pd_data = pd.read_sql_query(query, con=engine)
-    #
     context.log.info(pd_data)
 
     return Output(
@@ -96,8 +88,8 @@ def fact_sales(
 )
 def dim_products(
         context,
-        bronze_olist_products_dataset,
-        bronze_product_category_name_translation
+        bronze_olist_products_dataset: pd.DataFrame,
+        bronze_product_category_name_translation: pd.DataFrame
 ) -> Output[pd.DataFrame]:
 
     query = """SELECT 
@@ -124,22 +116,109 @@ def dim_products(
     sparkDF = spark.sql(query)
     pd_data = sparkDF.toPandas()
 
-# # Using sqlalchenmy
-#     engine = create_engine('sqlite://', echo=False)
-#
-#     # Convert the DataFrame to a SQL table
-#     bronze_olist_products_dataset.to_sql('olist_products_dataset', con=engine, index=False)
-#     bronze_product_category_name_translation.to_sql('product_category_name_translation', con=engine, index=False)
-#
-#     # Execute the SQL query using Pandas
-#     pd_data = pd.read_sql_query(query, con=engine)
-
     context.log.info(pd_data)
 
     return Output(
         pd_data,
         metadata={
             "table": "dim_products",
+            "records count": len(pd_data),
+        },
+    )
+
+
+@asset(
+    ins={
+        "bronze_olist_sellers_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"],
+        )
+    },
+    io_manager_key="minio_io_manager",
+    key_prefix=["silver", "ecom"],
+    compute_kind="spark",
+    group_name="silver_layer"
+)
+def dim_sellers(
+        context,
+        bronze_olist_sellers_dataset: pd.DataFrame,
+) -> Output[pd.DataFrame]:
+
+    query = """SELECT
+                seller_id
+                , seller_city
+                , seller_state 
+            FROM olist_sellers_dataset osd """
+
+# Using Spark
+    spark = (SparkSession.builder.appName("silver_dim-products_{}".format(datetime.today()))
+             .master("spark://spark-master:7077")
+             .getOrCreate())
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+
+    # Creating spark dataframe
+    spark_olist_sellers = spark.createDataFrame(bronze_olist_sellers_dataset)
+
+    spark_olist_sellers.createOrReplaceTempView("olist_sellers_dataset")
+
+    sparkDF = spark.sql(query)
+    pd_data = sparkDF.toPandas()
+
+    context.log.info(pd_data)
+
+    return Output(
+        pd_data,
+        metadata={
+            "table": "dim_sellers",
+            "records count": len(pd_data),
+        },
+    )
+
+
+@asset(
+    ins={
+        "bronze_olist_customers_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"],
+        )
+    },
+    io_manager_key="minio_io_manager",
+    key_prefix=["silver", "ecom"],
+    compute_kind="spark",
+    group_name="silver_layer"
+)
+def dim_customers(
+        context,
+        bronze_olist_customers_dataset: pd.DataFrame
+) -> Output[pd.DataFrame]:
+
+    query = """SELECT 
+                customer_id
+                , customer_unique_id
+                , customer_city
+                , customer_state 
+            FROM olist_customers_dataset ocd """
+
+# Using Spark
+    spark = (SparkSession.builder.appName("silver_dim-customers_{}".format(datetime.today()))
+             .master("spark://spark-master:7077")
+             .getOrCreate())
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+
+    # Creating spark dataframe
+    spark_olist_customers = spark.createDataFrame(bronze_olist_customers_dataset)
+
+    spark_olist_customers.createOrReplaceTempView("olist_customers_dataset")
+
+    sparkDF = spark.sql(query)
+    pd_data = sparkDF.toPandas()
+
+    context.log.info(pd_data)
+
+    return Output(
+        pd_data,
+        metadata={
+            "table": "dim_customers",
             "records count": len(pd_data),
         },
     )

@@ -41,8 +41,7 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
             JOIN dim_products p
             ON ts.product_id = p.product_id
             )
-            
-            
+                        
             SELECT
             monthly
             , category

@@ -1,4 +1,8 @@
-from .assets import bronze_layer, silver_layer, partitioning, gold_layer, warehouse
+from .assets import (bronze_layer,
+                     silver_layer,
+                     partitioning,
+                     gold_layer,
+                     warehouse)
 from .resources import mysql, minio, psql # type: ignore
 
 from dagster import Definitions, load_assets_from_modules
