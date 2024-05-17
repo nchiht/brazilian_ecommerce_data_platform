@@ -6,7 +6,7 @@ from dagster import asset, AssetIn, Output
     ins={'gold_sales_values_by_category': AssetIn(key_prefix=["gold", "ecom"])},
     io_manager_key='psql_io_manager',
     required_resource_keys={"psql_io_manager"},
-    key_prefix=["public"],
+    key_prefix=["warehouse"],
     compute_kind="postgres",
     group_name="warehouse_layer"
 )

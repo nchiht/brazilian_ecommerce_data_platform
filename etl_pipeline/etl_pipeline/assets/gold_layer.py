@@ -1,7 +1,8 @@
 import pandas as pd
 from dagster import asset, AssetIn, Output
 from pandas import DataFrame
-from sqlalchemy import create_engine
+from pyspark.sql import SparkSession
+from datetime import datetime
 
 
 @asset(
@@ -32,7 +33,7 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
             daily_sales_categories AS (
             SELECT
             ts.daily
-            , STRFTIME('%Y-%m', ts.daily) AS monthly
+            , DATE_FORMAT(ts.daily, 'yyyy-MM') AS monthly
             , p.product_category_name_english AS category
             , ts.sales
             , ts.bills
@@ -53,14 +54,22 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
             monthly
             , category"""
 
-    engine = create_engine('sqlite://', echo=False)
+    spark = (SparkSession.builder.appName("gold_sales_by_category_{}".format(datetime.today()))
+             .master("spark://spark-master:7077")
+             .getOrCreate())
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
 
-    fact_sales.to_sql('fact_sales', con=engine, index=False, if_exists='replace')
-    dim_products.to_sql('dim_products', con=engine, index=False, if_exists='replace')
+    spark_fact_sales = spark.createDataFrame(fact_sales)
+    spark_dim_products = spark.createDataFrame(dim_products)
 
-    pd_data = pd.read_sql_query(query, con=engine)
+    spark_fact_sales.createOrReplaceTempView("fact_sales")
+    spark_dim_products.createOrReplaceTempView("dim_products")
 
-    context.log.info(pd_data.head(5))
+    sparkDF = spark.sql(query)
+    pd_data = sparkDF.toPandas()
+
+    context.log.info(pd_data)
 
     return Output(
         pd_data,

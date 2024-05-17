@@ -34,7 +34,14 @@ class PostgreSQLIOManager(IOManager):
         with connect_psql(self._config) as db_conn:
             primary_keys = (context.metadata or {}).get("primary_keys", [])
             ls_columns = (context.metadata or {}).get("columns", [])
+
+            # with db_conn.connect() as cursor:
+            #     cursor.execute(
+            #         text(f"CREATE SCHEMA IF NOT EXISTS {schema}")
+            #     )
+
             try:
+
                 # creating entire new table if this asset is not partitioned
                 obj.to_sql(name=table, schema=schema, con=db_conn, if_exists='replace', index=False)
 
@@ -44,7 +51,6 @@ class PostgreSQLIOManager(IOManager):
                     # create temp table
                     cursor.execute(
                         text(f"CREATE TEMP TABLE IF NOT EXISTS {tmp_tbl} (LIKE {schema}.{table})")
-
                     )
                     # insert new data
                     obj[ls_columns].to_sql(
