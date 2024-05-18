@@ -4,19 +4,21 @@ from pandas import DataFrame
 from pyspark.sql import SparkSession
 from datetime import datetime
 
-
 @asset(
     ins={
-        'fact_sales': AssetIn(key_prefix=["silver", "ecom"]),
-        'dim_products': AssetIn(key_prefix=["silver", "ecom"])
+        'silver_fact_sales': AssetIn(key_prefix=["silver", "ecom"]),
+        'silver_dim_products': AssetIn(key_prefix=["silver", "ecom"])
     },
     io_manager_key='minio_io_manager',
     key_prefix=["gold", "ecom"],
     compute_kind="MinIO",
     group_name="gold_layer"
 )
-def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_products: pd.DataFrame) -> Output[DataFrame]:
-
+def gold_sales_values_by_category(
+        context,
+        silver_fact_sales: pd.DataFrame,
+        silver_dim_products: pd.DataFrame
+) -> Output[pd.DataFrame]:
     query = """WITH daily_sales_products AS (
             SELECT
             DATE(order_purchase_timestamp) AS daily
@@ -29,7 +31,7 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
             DATE(order_purchase_timestamp)
             , product_id
             ), 
-            
+
             daily_sales_categories AS (
             SELECT
             ts.daily
@@ -42,7 +44,7 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
             JOIN dim_products p
             ON ts.product_id = p.product_id
             )
-                        
+
             SELECT
             monthly
             , category
@@ -60,8 +62,8 @@ def gold_sales_values_by_category(context, fact_sales: pd.DataFrame, dim_product
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
     spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
 
-    spark_fact_sales = spark.createDataFrame(fact_sales)
-    spark_dim_products = spark.createDataFrame(dim_products)
+    spark_fact_sales = spark.createDataFrame(silver_fact_sales)
+    spark_dim_products = spark.createDataFrame(silver_dim_products)
 
     spark_fact_sales.createOrReplaceTempView("fact_sales")
     spark_dim_products.createOrReplaceTempView("dim_products")

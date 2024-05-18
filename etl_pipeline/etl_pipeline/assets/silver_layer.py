@@ -21,7 +21,7 @@ from pyspark.sql import SparkSession
     compute_kind="spark",
     group_name="silver_layer"
 )
-def fact_sales(
+def silver_fact_sales(
         context,
         bronze_olist_orders_dataset: pd.DataFrame,
         bronze_olist_order_items_dataset: pd.DataFrame,
@@ -86,7 +86,7 @@ def fact_sales(
     compute_kind="spark",
     group_name="silver_layer"
 )
-def dim_products(
+def silver_dim_products(
         context,
         bronze_olist_products_dataset: pd.DataFrame,
         bronze_product_category_name_translation: pd.DataFrame
@@ -138,7 +138,7 @@ def dim_products(
     compute_kind="spark",
     group_name="silver_layer"
 )
-def dim_sellers(
+def silver_dim_sellers(
         context,
         bronze_olist_sellers_dataset: pd.DataFrame,
 ) -> Output[pd.DataFrame]:
@@ -186,7 +186,7 @@ def dim_sellers(
     compute_kind="spark",
     group_name="silver_layer"
 )
-def dim_customers(
+def silver_dim_customers(
         context,
         bronze_olist_customers_dataset: pd.DataFrame
 ) -> Output[pd.DataFrame]:

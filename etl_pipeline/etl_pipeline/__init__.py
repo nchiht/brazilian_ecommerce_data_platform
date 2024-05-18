@@ -9,6 +9,7 @@ from dagster import Definitions, load_assets_from_modules
 
 all_assets = load_assets_from_modules(
     [bronze_layer, silver_layer, gold_layer, warehouse]
+    # [bronze_layer, silver_layer, warehouse]
     # [bronze_layer, partitioning]
 )
 

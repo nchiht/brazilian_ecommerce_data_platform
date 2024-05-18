@@ -3,19 +3,76 @@ from dagster import asset, AssetIn, Output
 
 
 @asset(
-    ins={'gold_sales_values_by_category': AssetIn(key_prefix=["gold", "ecom"])},
+    ins={'silver_fact_sales': AssetIn(key_prefix=["silver", "ecom"])},
     io_manager_key='psql_io_manager',
     required_resource_keys={"psql_io_manager"},
     key_prefix=["warehouse"],
     compute_kind="postgres",
     group_name="warehouse_layer"
 )
-def sales_values_by_category(context, gold_sales_values_by_category: pd.DataFrame) -> Output[pd.DataFrame]:
+def fact_sales(context, silver_fact_sales: pd.DataFrame) -> Output[pd.DataFrame]:
     return Output(
-        gold_sales_values_by_category,
+        silver_fact_sales,
         metadata={
-            'schema': 'public',
-            'table': 'sales_values_by_category',
-            "records count": len(gold_sales_values_by_category)
+            'schema': 'warehouse',
+            'table': 'fact_sales',
+            "records count": len(silver_fact_sales)
+        }
+    )
+
+
+@asset(
+    ins={'silver_dim_products': AssetIn(key_prefix=["silver", "ecom"])},
+    io_manager_key='psql_io_manager',
+    required_resource_keys={"psql_io_manager"},
+    key_prefix=["warehouse"],
+    compute_kind="postgres",
+    group_name="warehouse_layer"
+)
+def dim_products(context, silver_dim_products: pd.DataFrame) -> Output[pd.DataFrame]:
+    return Output(
+        silver_dim_products,
+        metadata={
+            'schema': 'warehouse',
+            'table': 'dim_products',
+            "records count": len(silver_dim_products)
+        }
+    )
+
+
+@asset(
+    ins={'silver_dim_sellers': AssetIn(key_prefix=["silver", "ecom"])},
+    io_manager_key='psql_io_manager',
+    required_resource_keys={"psql_io_manager"},
+    key_prefix=["warehouse"],
+    compute_kind="postgres",
+    group_name="warehouse_layer"
+)
+def dim_sellers(context, silver_dim_sellers: pd.DataFrame) -> Output[pd.DataFrame]:
+    return Output(
+        silver_dim_sellers,
+        metadata={
+            'schema': 'warehouse',
+            'table': 'dim_sellers',
+            "records count": len(silver_dim_sellers)
+        }
+    )
+
+
+@asset(
+    ins={'silver_dim_customers': AssetIn(key_prefix=["silver", "ecom"])},
+    io_manager_key='psql_io_manager',
+    required_resource_keys={"psql_io_manager"},
+    key_prefix=["warehouse"],
+    compute_kind="postgres",
+    group_name="warehouse_layer"
+)
+def dim_customers(context, silver_dim_customers: pd.DataFrame) -> Output[pd.DataFrame]:
+    return Output(
+        silver_dim_customers,
+        metadata={
+            'schema': 'warehouse',
+            'table': 'dim_customers',
+            "records count": len(silver_dim_customers)
         }
     )
