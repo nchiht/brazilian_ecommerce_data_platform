@@ -80,4 +80,3 @@ def gold_sales_values_by_category(
             "records count": len(pd_data)
         }
     )
-
