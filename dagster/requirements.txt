@@ -1,6 +1,6 @@
-dagster
-dagit
-dagster-postgres
-dagster-docker
-dagster-spark
-
+dagster==1.7.5
+dagit==1.7.5
+dagster-webserver==1.7.5
+dagster-postgres==0.23.5
+dagster-spark==0.23.5
+dagster-dbt==0.23.5
