@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+#  - name: warehouse
+#    tables:
+#      - name: fact_sales
+#      - name: dim_products
+#      - name: dim_customers
+#      - name: dim_sellers
+  - name: warehouse
+    tables:
+      - name: fact_sales
+        meta:
+          dagster:
+            asset_key: ["warehouse", "fact_sales"]
+      - name: dim_products
+        meta:
+          dagster:
+            asset_key: [ "warehouse", "dim_products" ]

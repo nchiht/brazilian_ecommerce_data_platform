@@ -1,27 +1,28 @@
 {{ config(materialized="table") }}
 
 WITH daily_sales_products AS (
-SELECT
-    CAST(order_purchase_timestamp AS DATE) AS daily
-    , product_id
-    , SUM(CAST(payment_value AS FLOAT)) AS sales
-    , COUNT(DISTINCT(order_id)) AS bills
-FROM {{ref("fact_sales")}}
-WHERE order_status = 'delivered'
-GROUP BY
-    CAST(order_purchase_timestamp AS DATE)
-    , product_id
+    SELECT
+        CAST(order_purchase_timestamp AS DATE) AS daily
+        , product_id
+        , SUM(CAST(payment_value AS FLOAT)) AS sales
+        , COUNT(DISTINCT(order_id)) AS bills
+    FROM
+        {{source('warehouse', "fact_sales")}}
+    WHERE order_status = 'delivered'
+    GROUP BY
+        CAST(order_purchase_timestamp AS DATE)
+        , product_id
 ), daily_sales_categories AS (
-SELECT
-    ts.daily
-    , TO_CHAR(ts."daily", 'YYYY-MM') AS "monthly"
-    , p.product_category_name_english AS category
-    , ts.sales
-    , ts.bills
-    , (ts.sales / ts.bills) AS values_per_bills
-FROM daily_sales_products ts
-JOIN {{ref("dim_products")}} p
-ON ts.product_id = p.product_id
+    SELECT
+        ts.daily
+        , TO_CHAR(ts."daily", 'YYYY-MM') AS "monthly"
+        , p.product_category_name_english AS category
+        , ts.sales
+        , ts.bills
+        , (ts.sales / ts.bills) AS values_per_bills
+    FROM daily_sales_products ts
+    JOIN {{source('warehouse', "dim_products")}} p
+    ON ts.product_id = p.product_id
 )
 SELECT
     monthly

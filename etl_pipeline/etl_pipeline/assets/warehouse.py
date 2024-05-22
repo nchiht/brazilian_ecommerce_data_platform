@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster import asset, AssetIn, Output
+from dagster import asset, AssetIn, Output, AssetExecutionContext
 
 
 @asset(
@@ -10,7 +10,7 @@ from dagster import asset, AssetIn, Output
     compute_kind="postgres",
     group_name="warehouse_layer"
 )
-def fact_sales(context, silver_fact_sales: pd.DataFrame) -> Output[pd.DataFrame]:
+def fact_sales(context: AssetExecutionContext, silver_fact_sales: pd.DataFrame) -> Output[pd.DataFrame]:
     return Output(
         silver_fact_sales,
         metadata={
@@ -29,7 +29,7 @@ def fact_sales(context, silver_fact_sales: pd.DataFrame) -> Output[pd.DataFrame]
     compute_kind="postgres",
     group_name="warehouse_layer"
 )
-def dim_products(context, silver_dim_products: pd.DataFrame) -> Output[pd.DataFrame]:
+def dim_products(context: AssetExecutionContext, silver_dim_products: pd.DataFrame) -> Output[pd.DataFrame]:
     return Output(
         silver_dim_products,
         metadata={

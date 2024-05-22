@@ -15,3 +15,4 @@ pandasql==0.7.3
 minio==7.2.7
 jupyter==1.0.0
 dbt-postgres==1.7.14
+pathlib==1.0.1
