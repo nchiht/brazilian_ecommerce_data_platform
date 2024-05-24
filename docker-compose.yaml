@@ -173,6 +173,38 @@ services:
 #    networks:
 #      - de_network
 
+  # Streamlit
+  de_streamlit:
+    build:
+      context: ./streamlit
+      dockerfile: Dockerfile
+    image: de_streamlit:latest
+    container_name: de_streamlit
+    volumes:
+      - ./app:/app
+    env_file:
+      - env
+    ports:
+      - "8501:8501"
+    networks:
+      - de_network
+
+  # Metabase
+  de_metabase:
+    image: metabase/metabase:latest
+    container_name: de_metabase
+    hostname: de_metabase
+    volumes:
+      - ./data/metabase:/metabase_data
+    ports:
+      - "3000:3000"
+    env_file:
+      - env
+    depends_on:
+      - de_psql
+    networks:
+      - de_network
+
 networks:
   de_network:
     driver: bridge
