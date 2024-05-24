@@ -26,10 +26,23 @@ services:
     container_name: de_psql
     volumes:
       - ./data/postgresql:/var/lib/postgresql/data
+      - ./init_mysql/scripts/de_psql_init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     env_file:
       - env
+    networks:
+      - de_network
+
+  metabase_psql:
+    image: postgres:15
+    container_name: metabase_psql
+    volumes:
+      - ./data/metabase_psql:/var/lib/postgresql/data
+    ports:
+      - "5430:5432"
+    env_file:
+      - metabase_psql_env
     networks:
       - de_network
 
@@ -38,6 +51,7 @@ services:
     container_name: de_mysql
     volumes:
       - ./data/mysql:/var/lib/mysql
+#      - ./init_mysql/mysql_scripts.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "3306:3306"
     env_file:

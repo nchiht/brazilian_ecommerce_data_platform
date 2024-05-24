@@ -31,8 +31,13 @@ def silver_fact_sales(
     query = """SELECT ro.order_id
                     , ro.customer_id
                     , ro.order_purchase_timestamp
+                    , ro.order_delivered_carrier_date
+                    , ro.order_delivered_customer_date
+                    , ro.order_estimated_delivery_date
                     , roi.product_id
                     , roi.seller_id
+                    , roi.shipping_limit_date
+                    , (roi.price + roi.freight_value) as price
                     , rop.payment_type
                     , rop.payment_installments
                     , rop.payment_value

@@ -3,7 +3,7 @@ venv
 
 #data
 data
-init_mysql
+init_mysql/brazilian-ecommerce/*
 
 #dagster
 dagster_home/.logs_queue
