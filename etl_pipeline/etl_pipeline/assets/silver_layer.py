@@ -27,7 +27,6 @@ def silver_fact_sales(
         bronze_olist_order_items_dataset: pd.DataFrame,
         bronze_olist_order_payments_dataset: pd.DataFrame
 ) -> Output[pd.DataFrame]:
-
     query = """SELECT ro.order_id
                     , ro.customer_id
                     , ro.order_purchase_timestamp
@@ -48,7 +47,7 @@ def silver_fact_sales(
                 JOIN olist_order_payments_dataset rop   
                 ON ro.order_id = rop.order_id"""
 
-# Using Spark
+    # Using Spark
     spark = (SparkSession.builder.appName("silver_fact-sales_{}".format(datetime.today()))
              .master("spark://spark-master:7077")
              .getOrCreate())
@@ -96,7 +95,6 @@ def silver_dim_products(
         bronze_olist_products_dataset: pd.DataFrame,
         bronze_product_category_name_translation: pd.DataFrame
 ) -> Output[pd.DataFrame]:
-
     query = """SELECT 
                 rp.product_id
                 , pcnt.product_category_name_english    
@@ -104,7 +102,7 @@ def silver_dim_products(
             JOIN product_category_name_translation pcnt 
             ON rp.product_category_name = pcnt.product_category_name"""
 
-# Using Spark
+    # Using Spark
     spark = (SparkSession.builder.appName("silver_dim-products_{}".format(datetime.today()))
              .master("spark://spark-master:7077")
              .getOrCreate())
@@ -136,6 +134,9 @@ def silver_dim_products(
     ins={
         "bronze_olist_sellers_dataset": AssetIn(
             key_prefix=["bronze", "ecom"],
+        ),
+        "bronze_olist_geolocation_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"]
         )
     },
     io_manager_key="minio_io_manager",
@@ -146,15 +147,19 @@ def silver_dim_products(
 def silver_dim_sellers(
         context,
         bronze_olist_sellers_dataset: pd.DataFrame,
+        bronze_olist_geolocation_dataset: pd.DataFrame,
 ) -> Output[pd.DataFrame]:
-
     query = """SELECT
                 seller_id
                 , seller_city
-                , seller_state 
-            FROM olist_sellers_dataset osd """
+                , seller_state
+                , geolocation_lat
+                , geolocation_lng
+            FROM olist_sellers_dataset osd
+            JOIN olist_geolocation_dataset ogd
+            ON osd.seller_zip_code_prefix = ogd.geolocation_zip_code_prefix"""
 
-# Using Spark
+    # Using Spark
     spark = (SparkSession.builder.appName("silver_dim-products_{}".format(datetime.today()))
              .master("spark://spark-master:7077")
              .getOrCreate())
@@ -163,8 +168,10 @@ def silver_dim_sellers(
 
     # Creating spark dataframe
     spark_olist_sellers = spark.createDataFrame(bronze_olist_sellers_dataset)
+    spark_olist_geolocation = spark.createDataFrame(bronze_olist_geolocation_dataset)
 
     spark_olist_sellers.createOrReplaceTempView("olist_sellers_dataset")
+    spark_olist_geolocation.createOrReplaceTempView("olist_geolocation_dataset")
 
     sparkDF = spark.sql(query)
     pd_data = sparkDF.toPandas()
@@ -184,7 +191,10 @@ def silver_dim_sellers(
     ins={
         "bronze_olist_customers_dataset": AssetIn(
             key_prefix=["bronze", "ecom"],
-        )
+        ),
+        # "bronze_olist_geolocation_dataset": AssetIn(
+        #     key_prefix=["bronze", "ecom"]
+        # )
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
@@ -193,20 +203,24 @@ def silver_dim_sellers(
 )
 def silver_dim_customers(
         context,
-        bronze_olist_customers_dataset: pd.DataFrame
+        bronze_olist_customers_dataset: pd.DataFrame,
+        # bronze_olist_geolocation_dataset: pd.DataFrame
 ) -> Output[pd.DataFrame]:
-
     query = """SELECT 
                 customer_id
                 , customer_unique_id
+                , customer_zip_code_prefix
                 , customer_city
-                , customer_state 
-            FROM olist_customers_dataset ocd """
+                , customer_state
+            FROM olist_customers_dataset ocd"""
 
-# Using Spark
-    spark = (SparkSession.builder.appName("silver_dim-customers_{}".format(datetime.today()))
-             .master("spark://spark-master:7077")
-             .getOrCreate())
+    # Using Spark
+    spark = SparkSession.builder.appName("silver_dim-customers_{}".format(datetime.today())) \
+        .master("spark://spark-master:7077") \
+        .config("spark.memory.offHeap.enabled", "true") \
+        .config("spark.memory.offHeap.size", "10g")\
+        .getOrCreate()
+
     spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
     spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
 
@@ -224,6 +238,49 @@ def silver_dim_customers(
         pd_data,
         metadata={
             "table": "dim_customers",
+            "records count": len(pd_data),
+        },
+    )
+
+
+@asset(
+    ins={
+        "bronze_olist_geolocation_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"],
+        )
+    },
+    io_manager_key="minio_io_manager",
+    key_prefix=["silver", "ecom"],
+    compute_kind="spark",
+    group_name="silver_layer"
+)
+def silver_dim_geolocation(
+        context,
+        bronze_olist_geolocation_dataset: pd.DataFrame
+) -> Output[pd.DataFrame]:
+    query = """SELECT *
+                FROM olist_geolocation_dataset ogd"""
+
+    # Using Spark
+    spark = (SparkSession.builder.appName("silver_dim-geolocation_{}".format(datetime.today()))
+             .master("spark://spark-master:7077")
+             .getOrCreate())
+    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+
+    spark_bronze_olist_geolocation = spark.createDataFrame(bronze_olist_geolocation_dataset)
+
+    spark_bronze_olist_geolocation.createOrReplaceTempView("olist_geolocation_dataset")
+
+    sparkDF = spark.sql(query)
+    pd_data = sparkDF.toPandas()
+
+    context.log.info(pd_data)
+
+    return Output(
+        pd_data,
+        metadata={
+            "table": "dim_geolocation",
             "records count": len(pd_data),
         },
     )

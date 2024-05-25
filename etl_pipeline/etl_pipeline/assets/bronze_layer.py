@@ -133,3 +133,22 @@ def bronze_olist_sellers_dataset(context) -> Output[pd.DataFrame]:
             "records count": len(pd_data),
         },
     )
+
+
+@asset(
+    io_manager_key="minio_io_manager",
+    required_resource_keys={"mysql_io_manager"},
+    key_prefix=["bronze", "ecom"],
+    compute_kind="python",
+    group_name="bronze_layer"
+)
+def bronze_olist_geolocation_dataset(context) -> Output[pd.DataFrame]:
+    sql_stm = "SELECT * FROM olist_geolocation_dataset"
+    pd_data = context.resources.mysql_io_manager.extract_data(sql_stm)
+    return Output(
+        pd_data,
+        metadata={
+            "table": "olist_geolocation_dataset",
+            "records count": len(pd_data),
+        },
+    )

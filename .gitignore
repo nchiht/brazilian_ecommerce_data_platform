@@ -15,6 +15,7 @@ dagster_home/logs
 env
 spark_master_env
 spark_worker_env
+metabase_psql_env
 
 # etl_pipeline
 etl_pipeline/.Trash-0

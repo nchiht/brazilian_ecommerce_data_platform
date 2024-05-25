@@ -6,6 +6,16 @@ DROP TABLE IF EXISTS olist_products_dataset;
 DROP TABLE IF EXISTS olist_sellers_dataset;
 DROP TABLE IF EXISTS olist_customers_dataset;
 DROP TABLE IF EXISTS product_category_name_translation;
+DROP TABLE IF EXISTS olist_geolocation_dataset;
+
+
+CREATE TABLE olist_geolocation_dataset (
+    geolocation_zip_code_prefix VARCHAR(8),
+    geolocation_lat FLOAT,
+    geolocation_lng FLOAT,
+    geolocation_city VARCHAR(64),
+    geolocation_state VARCHAR(2)
+);
 
 -- Create Customers Table
 CREATE TABLE olist_customers_dataset (

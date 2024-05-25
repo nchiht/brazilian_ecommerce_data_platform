@@ -76,3 +76,22 @@ def dim_customers(context, silver_dim_customers: pd.DataFrame) -> Output[pd.Data
             "records count": len(silver_dim_customers)
         }
     )
+
+
+@asset(
+    ins={'silver_dim_geolocation': AssetIn(key_prefix=["silver", "ecom"])},
+    io_manager_key='psql_io_manager',
+    required_resource_keys={"psql_io_manager"},
+    key_prefix=["warehouse"],
+    compute_kind="postgres",
+    group_name="warehouse_layer"
+)
+def dim_geolocation(context, silver_dim_geolocation: pd.DataFrame) -> Output[pd.DataFrame]:
+    return Output(
+        silver_dim_geolocation,
+        metadata={
+            'schema': 'warehouse',
+            'table': 'dim_geolocation',
+            "records count": len(silver_dim_geolocation)
+        }
+    )

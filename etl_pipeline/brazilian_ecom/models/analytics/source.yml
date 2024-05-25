@@ -1,12 +1,6 @@
 version: 2
 
 sources:
-#  - name: warehouse
-#    tables:
-#      - name: fact_sales
-#      - name: dim_products
-#      - name: dim_customers
-#      - name: dim_sellers
   - name: warehouse
     tables:
       - name: fact_sales
@@ -17,3 +11,15 @@ sources:
         meta:
           dagster:
             asset_key: [ "warehouse", "dim_products" ]
+      - name: dim_customers
+        meta:
+          dagster:
+            asset_key: [ "warehouse", "dim_customers" ]
+      - name: dim_sellers
+        meta:
+          dagster:
+            asset_key: [ "warehouse", "dim_sellers" ]
+      - name: dim_geolocation
+        metta:
+          dagster:
+            asset_key: [ "warehouse", "dim_geolocation" ]
