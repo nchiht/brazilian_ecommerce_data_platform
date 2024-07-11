@@ -10,7 +10,7 @@
 --docker exec -it de_mysql mysql --local-infile=1 -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" ${MYSQL_DATABASE}
 
 
-source /tmp/mysql_scripts.sql
+--source /tmp/mysql_scripts.sql
 
 -- Load Data for Sellers Table
 LOAD DATA LOCAL INFILE '/tmp/brazilian-ecommerce/olist_sellers_dataset.csv'
@@ -76,11 +76,11 @@ select * from olist_order_items_dataset limit 10;
 select * from olist_orders_dataset limit 10;
 select * from product_category_name_translation limit 10;
 
-truncate olist_order_items_dataset;
-truncate olist_products_dataset;
-
-truncate olist_customers_dataset;
-truncate olist_order_payments_dataset;
-truncate olist_sellers_dataset;
-truncate olist_orders_dataset;
-truncate product_category_name_translation;
+--truncate olist_order_items_dataset;
+--truncate olist_products_dataset;
+--
+--truncate olist_customers_dataset;
+--truncate olist_order_payments_dataset;
+--truncate olist_sellers_dataset;
+--truncate olist_orders_dataset;
+--truncate product_category_name_translation;

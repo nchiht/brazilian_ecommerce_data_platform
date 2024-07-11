@@ -27,7 +27,7 @@ def connect_minio(config):
         raise
 
 
-class MinIOIOManager(IOManager):
+class SparkIOManager(IOManager):
     def __init__(self, config):
         self._config = config
 
@@ -36,15 +36,21 @@ class MinIOIOManager(IOManager):
         key = "/".join([layer, schema, table.replace(f"{layer}_", "")])
         tmp_file_path = "/tmp/file-{}-{}.parquet".format(
             datetime.today().strftime("%Y%m%d%H%M%S"),
-
             "-".join(context.asset_key.path)
         )
         return f"{key}.pq", tmp_file_path
 
-    def handle_output(self, context: OutputContext, obj: pd.DataFrame):
+    def handle_output(self, context: OutputContext, obj: DataFrame):
+
+        spark = (SparkSession.builder.appName("minio_handle_output{}".format(datetime.today()))
+                 .master('spark://spark-master:7077')
+                 .getOrCreate())
+        spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+        spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+
         # convert to parquet format
         key_name, tmp_file_path = self._get_path(context)
-        obj.to_parquet(tmp_file_path, engine='pyarrow')
+        obj.write.parquet(tmp_file_path)
 
         try:
             # connect to MinIO
@@ -64,7 +70,7 @@ class MinIOIOManager(IOManager):
                 client.fput_object(bucket_name, key_name, tmp_file_path)
                 print("successfully uploaded to bucket", bucket_name)
 
-                row_count = len(obj)
+                row_count = obj.count()
                 context.add_output_metadata(
                     {
                         "path": key_name,
@@ -78,7 +84,14 @@ class MinIOIOManager(IOManager):
         except Exception:
             raise
 
-    def load_input(self, context: InputContext) -> pd.DataFrame:
+    def load_input(self, context: InputContext) -> DataFrame:
+
+        spark = (SparkSession.builder.appName("minio_load_input{}".format(datetime.today()))
+                 .master('spark://spark-master:7077')
+                 .getOrCreate())
+        spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
+        spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+
         key_name, tmp_file_path = self._get_path(context)
         context.log.info(self._get_path(context))
         try:
@@ -87,7 +100,7 @@ class MinIOIOManager(IOManager):
 
                 # get parquet file from minio
                 client.fget_object(bucket_name, key_name, tmp_file_path)
-                content = pd.read_parquet(tmp_file_path)
+                content = spark.read.parquet(tmp_file_path)
                 # context.log.info(content)
 
                 # clean up tmp file

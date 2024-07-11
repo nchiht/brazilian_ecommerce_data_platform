@@ -143,7 +143,14 @@ def bronze_olist_sellers_dataset(context) -> Output[pd.DataFrame]:
     group_name="bronze_layer"
 )
 def bronze_olist_geolocation_dataset(context) -> Output[pd.DataFrame]:
-    sql_stm = "SELECT * FROM olist_geolocation_dataset"
+    sql_stm = """
+    select
+        geolocation_zip_code_prefix,
+        avg(geolocation_lat) as geolocation_lat,
+        avg(geolocation_lng) as geolocation_lng
+    from olist_geolocation_dataset ogd 
+    group by geolocation_zip_code_prefix
+    """
     pd_data = context.resources.mysql_io_manager.extract_data(sql_stm)
     return Output(
         pd_data,

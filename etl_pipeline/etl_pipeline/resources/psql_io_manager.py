@@ -44,7 +44,7 @@ class PostgreSQLIOManager(IOManager):
             try:
 
                 # creating entire new table if this asset is not partitioned
-                obj.to_sql(name=table, schema=schema, con=db_conn, if_exists='replace', index=False)
+                obj.to_sql(name=table, schema=schema, con=db_conn, if_exists='replace', index=False, chunksize=1000000)
 
             except context.has_asset_partitions:
                 # partitioning process

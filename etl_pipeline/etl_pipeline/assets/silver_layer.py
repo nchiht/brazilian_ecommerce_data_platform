@@ -1,7 +1,8 @@
 import pandas as pd
 from dagster import asset, Output, AssetIn, AssetOut
 from datetime import datetime
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
+from sqlalchemy import create_engine, DATETIME
 
 
 @asset(
@@ -18,7 +19,7 @@ from pyspark.sql import SparkSession
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="spark",
+    compute_kind="pandas",
     group_name="silver_layer"
 )
 def silver_fact_sales(
@@ -47,26 +48,24 @@ def silver_fact_sales(
                 JOIN olist_order_payments_dataset rop   
                 ON ro.order_id = rop.order_id"""
 
-    # Using Spark
-    spark = (SparkSession.builder.appName("silver_fact-sales_{}".format(datetime.today()))
-             .master("spark://spark-master:7077")
-             .getOrCreate())
-    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+    engine = create_engine('sqlite://', echo=False)
 
-    spark_bronze_olist_orders = spark.createDataFrame(bronze_olist_orders_dataset)
-    spark_bronze_olist_order_items = spark.createDataFrame(bronze_olist_order_items_dataset)
-    spark_bronze_olist_order_payments = spark.createDataFrame(bronze_olist_order_payments_dataset)
+    dtypes = {
+        'order_purchase_timestamp': DATETIME,
+        'order_delivered_carrier_date': DATETIME,
+        'order_delivered_customer_date': DATETIME,
+        'order_estimated_delivery_date': DATETIME
+    }
 
-    spark_bronze_olist_orders.createOrReplaceTempView("olist_orders_dataset")
-    spark_bronze_olist_order_items.createOrReplaceTempView("olist_order_items_dataset")
-    spark_bronze_olist_order_payments.createOrReplaceTempView("olist_order_payments_dataset")
+    # Convert the DataFrame to a SQL table
+    bronze_olist_orders_dataset.to_sql('olist_orders_dataset', con=engine, index=False, dtype=dtypes)
+    bronze_olist_order_items_dataset.to_sql('olist_order_items_dataset', con=engine, index=False)
+    bronze_olist_order_payments_dataset.to_sql('olist_order_payments_dataset', con=engine, index=False)
 
-    sparkDF = spark.sql(query)
-    pd_data = sparkDF.toPandas()
+    # Execute the SQL query using Pandas
+    pd_data = pd.read_sql_query(query, con=engine)
 
     context.log.info(pd_data)
-
     return Output(
         pd_data,
         metadata={
@@ -87,7 +86,7 @@ def silver_fact_sales(
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="spark",
+    compute_kind="pandas",
     group_name="silver_layer"
 )
 def silver_dim_products(
@@ -95,6 +94,9 @@ def silver_dim_products(
         bronze_olist_products_dataset: pd.DataFrame,
         bronze_product_category_name_translation: pd.DataFrame
 ) -> Output[pd.DataFrame]:
+
+    engine = create_engine('sqlite://', echo=False)
+
     query = """SELECT 
                 rp.product_id
                 , pcnt.product_category_name_english    
@@ -102,23 +104,10 @@ def silver_dim_products(
             JOIN product_category_name_translation pcnt 
             ON rp.product_category_name = pcnt.product_category_name"""
 
-    # Using Spark
-    spark = (SparkSession.builder.appName("silver_dim-products_{}".format(datetime.today()))
-             .master("spark://spark-master:7077")
-             .getOrCreate())
-    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+    bronze_olist_products_dataset.to_sql('olist_products_dataset', con=engine, index=False)
+    bronze_product_category_name_translation.to_sql('product_category_name_translation', con=engine, index=False)
 
-    # Creating spark dataframe
-    spark_olist_products = spark.createDataFrame(bronze_olist_products_dataset)
-    spark_product_category_name_translation = spark.createDataFrame(bronze_product_category_name_translation)
-
-    spark_olist_products.createOrReplaceTempView("olist_products_dataset")
-    spark_product_category_name_translation.createOrReplaceTempView("product_category_name_translation")
-
-    sparkDF = spark.sql(query)
-    pd_data = sparkDF.toPandas()
-
+    pd_data = pd.read_sql_query(query, con=engine)
     context.log.info(pd_data)
 
     return Output(
@@ -141,7 +130,7 @@ def silver_dim_products(
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="spark",
+    compute_kind="pandas",
     group_name="silver_layer"
 )
 def silver_dim_sellers(
@@ -149,6 +138,8 @@ def silver_dim_sellers(
         bronze_olist_sellers_dataset: pd.DataFrame,
         bronze_olist_geolocation_dataset: pd.DataFrame,
 ) -> Output[pd.DataFrame]:
+    engine = create_engine('sqlite://', echo=False)
+
     query = """SELECT
                 seller_id
                 , seller_city
@@ -159,23 +150,10 @@ def silver_dim_sellers(
             JOIN olist_geolocation_dataset ogd
             ON osd.seller_zip_code_prefix = ogd.geolocation_zip_code_prefix"""
 
-    # Using Spark
-    spark = (SparkSession.builder.appName("silver_dim-products_{}".format(datetime.today()))
-             .master("spark://spark-master:7077")
-             .getOrCreate())
-    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+    bronze_olist_sellers_dataset.to_sql('olist_sellers_dataset', con=engine, index=False)
+    bronze_olist_geolocation_dataset.to_sql('olist_geolocation_dataset', con=engine, index=False)
 
-    # Creating spark dataframe
-    spark_olist_sellers = spark.createDataFrame(bronze_olist_sellers_dataset)
-    spark_olist_geolocation = spark.createDataFrame(bronze_olist_geolocation_dataset)
-
-    spark_olist_sellers.createOrReplaceTempView("olist_sellers_dataset")
-    spark_olist_geolocation.createOrReplaceTempView("olist_geolocation_dataset")
-
-    sparkDF = spark.sql(query)
-    pd_data = sparkDF.toPandas()
-
+    pd_data = pd.read_sql_query(query, con=engine)
     context.log.info(pd_data)
 
     return Output(
@@ -183,7 +161,7 @@ def silver_dim_sellers(
         metadata={
             "table": "dim_sellers",
             "records count": len(pd_data),
-        },
+        }
     )
 
 
@@ -192,46 +170,42 @@ def silver_dim_sellers(
         "bronze_olist_customers_dataset": AssetIn(
             key_prefix=["bronze", "ecom"],
         ),
-        # "bronze_olist_geolocation_dataset": AssetIn(
-        #     key_prefix=["bronze", "ecom"]
-        # )
+        "bronze_olist_geolocation_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"]
+        )
     },
     io_manager_key="minio_io_manager",
     key_prefix=["silver", "ecom"],
-    compute_kind="spark",
+    compute_kind="pandas",
     group_name="silver_layer"
 )
 def silver_dim_customers(
         context,
         bronze_olist_customers_dataset: pd.DataFrame,
-        # bronze_olist_geolocation_dataset: pd.DataFrame
+        bronze_olist_geolocation_dataset: pd.DataFrame
 ) -> Output[pd.DataFrame]:
-    query = """SELECT 
-                customer_id
-                , customer_unique_id
-                , customer_zip_code_prefix
-                , customer_city
-                , customer_state
-            FROM olist_customers_dataset ocd"""
 
-    # Using Spark
-    spark = SparkSession.builder.appName("silver_dim-customers_{}".format(datetime.today())) \
-        .master("spark://spark-master:7077") \
-        .config("spark.memory.offHeap.enabled", "true") \
-        .config("spark.memory.offHeap.size", "10g")\
-        .getOrCreate()
+    # engine = create_engine('sqlite://', echo=False)
+    #
+    # query = """SELECT
+    #             customer_id
+    #             , customer_unique_id
+    #             , customer_city
+    #             , customer_state
+    #             , geolocation_lat
+    #             , geolocation_lng
+    #         FROM olist_customers_dataset ocd
+    #         JOIN olist_geolocation_dataset ogd
+    #         ON ocd.customer_zip_code_prefix = ogd.geolocation_zip_code_prefix"""
 
-    spark.conf.set("spark.sql.execution.arrow.pyspark.enabled", "true")
-    spark.conf.set("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
+    # bronze_olist_customers_dataset.to_sql('olist_customers_dataset', con=engine, index=False)
+    # bronze_olist_geolocation_dataset.to_sql('olist_geolocation_dataset', con=engine, index=False)
 
-    # Creating spark dataframe
-    spark_olist_customers = spark.createDataFrame(bronze_olist_customers_dataset)
-
-    spark_olist_customers.createOrReplaceTempView("olist_customers_dataset")
-
-    sparkDF = spark.sql(query)
-    pd_data = sparkDF.toPandas()
-
+    # pd_data = pd.read_sql_query(query, con=engine)
+    data = pd.merge(bronze_olist_customers_dataset, bronze_olist_geolocation_dataset, left_on='customer_zip_code_prefix'
+                    , right_on='geolocation_zip_code_prefix')
+    cols = ['customer_id', 'customer_unique_id', 'customer_city', 'customer_state', 'geolocation_lat', 'geolocation_lng']
+    pd_data = data[cols]
     context.log.info(pd_data)
 
     return Output(
@@ -245,8 +219,17 @@ def silver_dim_customers(
 
 @asset(
     ins={
-        "bronze_olist_geolocation_dataset": AssetIn(
+        "bronze_olist_orders_dataset": AssetIn(
             key_prefix=["bronze", "ecom"],
+        ),
+        "bronze_olist_customers_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"]
+        ),
+        "bronze_olist_order_items_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"]
+        ),
+        "bronze_products_dataset": AssetIn(
+            key_prefix=["bronze", "ecom"]
         )
     },
     io_manager_key="minio_io_manager",
@@ -257,7 +240,7 @@ def silver_dim_customers(
 def silver_dim_geolocation(
         context,
         bronze_olist_geolocation_dataset: pd.DataFrame
-) -> Output[pd.DataFrame]:
+) -> Output[DataFrame]:
     query = """SELECT *
                 FROM olist_geolocation_dataset ogd"""
 
@@ -273,14 +256,18 @@ def silver_dim_geolocation(
     spark_bronze_olist_geolocation.createOrReplaceTempView("olist_geolocation_dataset")
 
     sparkDF = spark.sql(query)
-    pd_data = sparkDF.toPandas()
-
-    context.log.info(pd_data)
+    # pd_data = sparkDF.toPandas()
+    # context.log.info(pd_data)
 
     return Output(
-        pd_data,
+        # pd_data,
+        # metadata={
+        #     "table": "dim_geolocation",
+        #     "records count": len(pd_data),
+        # },
+        sparkDF,
         metadata={
             "table": "dim_geolocation",
-            "records count": len(pd_data),
-        },
+            "records count": sparkDF.count()
+        }
     )

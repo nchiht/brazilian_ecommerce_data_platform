@@ -19,7 +19,7 @@ sources:
         meta:
           dagster:
             asset_key: [ "warehouse", "dim_sellers" ]
-      - name: dim_geolocation
-        metta:
-          dagster:
-            asset_key: [ "warehouse", "dim_geolocation" ]
+#      - name: dim_geolocation
+#        metta:
+#          dagster:
+#            asset_key: [ "warehouse", "dim_geolocation" ]

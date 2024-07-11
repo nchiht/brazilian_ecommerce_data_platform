@@ -5,10 +5,10 @@ WITH geolocation_buckets AS (
         (
             FLOOR(
                 (
-                    (dim_sellers.geolocation_lng - -46.800000000000004) / 0.1
+                    (dim_sellers.geolocation_lng - -46.7) / 0.1
                 )
             ) * 0.1
-        ) + -46.800000000000004 AS geolocation_lng_bucket,
+        ) + -46.7 AS geolocation_lng_bucket,
         (
             FLOOR(
                 (

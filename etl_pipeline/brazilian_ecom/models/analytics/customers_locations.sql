@@ -1,37 +1,35 @@
 {{ config(materialized="table") }}
 
-WITH geolocation_data AS (
+WITH geolocation_buckets AS (
     SELECT
-        geolocation_zip_code_prefix,
-        geolocation_lat,
-        geolocation_lng
+        (
+            FLOOR(
+                (
+                    (dim_customers.geolocation_lng - -46.7) / 0.1
+                )
+            ) * 0.1
+        ) + -46.7 AS geolocation_lng_bucket,
+        (
+            FLOOR(
+                (
+                    (dim_customers.geolocation_lat - -23.8) / 0.1
+                )
+            ) * 0.1
+        ) + -23.8 AS geolocation_lat_bucket,
+        COUNT(*) AS count
     FROM
-        {{ source('warehouse', 'dim_geolocation') }}
+        {{ source('warehouse', 'dim_customers') }} AS dim_customers
+    GROUP BY
+        geolocation_lng_bucket,
+        geolocation_lat_bucket
 )
 
 SELECT
-  (
-    FLOOR(
-      (
-        (geolocation_data.geolocation_lat - -23.8) / 0.1
-      )
-    ) * 0.1
-  ) + -23.8 AS geolocation_lat_bucket,
-  (
-    FLOOR(
-      (
-        (geolocation_data.geolocation_lng - -46.7) / 0.1
-      )
-    ) * 0.1
-  ) + -46.7 AS geolocation_lng_bucket,
-  COUNT(*) AS count
+    geolocation_lng_bucket AS geolocation_lng,
+    geolocation_lat_bucket AS geolocation_lat,
+    count
 FROM
-  {{ source('warehouse', 'dim_customers') }} AS dim_customers
-LEFT JOIN geolocation_data
-  ON dim_customers.customer_zip_code_prefix = geolocation_data.geolocation_zip_code_prefix
-GROUP BY
-  geolocation_lat_bucket,
-  geolocation_lng_bucket
+    geolocation_buckets
 ORDER BY
-  geolocation_lat_bucket ASC,
-  geolocation_lng_bucket ASC
+    geolocation_lng ASC,
+    geolocation_lat ASC
