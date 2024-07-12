@@ -125,7 +125,7 @@ The entire system is dockerized to achieve the following purposes:
 - **Scalability:** Allows easy scaling of individual components as needed.
 - **Portability:** Ensures the system can be easily deployed on any environment that supports Docker.
 
-## Detailed Workflow and Data Lineage
+### Detailed Workflow and Data Lineage
 
 ![](images/data_flow.png)
 
